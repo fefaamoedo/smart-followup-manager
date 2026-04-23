@@ -1,0 +1,26 @@
+import pandas as pd
+
+
+def carregar_base(caminho_arquivo: str) -> pd.DataFrame:
+    df = pd.read_csv(caminho_arquivo)
+
+    colunas_esperadas = [
+        "pedido",
+        "fornecedor",
+        "comprador",
+        "data_prevista",
+        "dias_atraso",
+        "valor",
+        "status",
+        "criticidade",
+    ]
+
+    faltantes = [col for col in colunas_esperadas if col not in df.columns]
+    if faltantes:
+        raise ValueError(f"Colunas ausentes no arquivo: {faltantes}")
+
+    df["data_prevista"] = pd.to_datetime(df["data_prevista"])
+    df["dias_atraso"] = df["dias_atraso"].astype(int)
+    df["valor"] = df["valor"].astype(float)
+
+    return df
