@@ -1,0 +1,9 @@
+pedido,fornecedor,comprador,data_prevista,dias_atraso,valor,status,criticidade
+450001,Alpha Resinas,Ana,2025-06-01,3,18500,Aguardando retorno,Média
+450002,Beta Polímeros,Carlos,2025-05-28,7,42000,Em atraso,Alta
+450003,Gamma Insumos,Fernanda,2025-06-03,1,9500,Aguardando retorno,Baixa
+450004,Delta Químicos,Ana,2025-05-20,15,61000,Em atraso,Alta
+450005,Epsilon Masterbatch,Lucas,2025-06-02,2,12000,Aguardando confirmação,Média
+450006,Zeta Embalagens,Carlos,2025-05-25,10,27500,Em atraso,Alta
+450007,Omega Supply,Fernanda,2025-06-04,0,8300,No prazo,Baixa
+450008,Sigma Industrial,Ana,2025-05-30,5,19800,Aguardando retorno,Média
