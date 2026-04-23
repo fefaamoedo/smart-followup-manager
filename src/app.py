@@ -1,6 +1,15 @@
+import sys
+from pathlib import Path
+
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+
+BASE_DIR = Path(__file__).resolve().parent
+ROOT_DIR = BASE_DIR.parent
+
+if str(BASE_DIR) not in sys.path:
+    sys.path.append(str(BASE_DIR))
 
 from preprocess import carregar_base
 from metrics import tratar_followups
@@ -55,16 +64,15 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
 @st.cache_data
 def carregar_dados():
-    df = carregar_base("../data/followups.csv")
+    caminho_csv = ROOT_DIR / "data" / "followups.csv"
+    df = carregar_base(caminho_csv)
     df = tratar_followups(df)
     return df
 
 
 df = carregar_dados()
-
 
 st.sidebar.title("Filtros")
 
@@ -143,13 +151,14 @@ with col3:
     )
 
 with col4:
+    valor_formatado = f"R$ {valor_total:,.0f}".replace(",", ".")
     st.markdown(
         f"""
         <div class="kpi-card">
             <div class="kpi-title">Valor Total</div>
-            <div class="kpi-value" style="color:#2563eb;">R$ {valor_total:,.0f}</div>
+            <div class="kpi-value" style="color:#2563eb;">{valor_formatado}</div>
         </div>
-        """.replace(",", "."),
+        """,
         unsafe_allow_html=True
     )
 
@@ -261,7 +270,9 @@ colunas_exibir = [
 
 df_tabela = df_filtrado[colunas_exibir].copy()
 df_tabela["data_prevista"] = pd.to_datetime(df_tabela["data_prevista"]).dt.strftime("%d/%m/%Y")
-df_tabela["valor"] = df_tabela["valor"].map(lambda x: f"R$ {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+df_tabela["valor"] = df_tabela["valor"].map(
+    lambda x: f"R$ {x:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+)
 
 def destacar_prioridade(valor):
     if valor == "Alta":
