@@ -1,0 +1,66 @@
+import pandas as pd
+
+
+def calcular_score_urgencia(row: pd.Series) -> int:
+    score = 0
+
+    if row["dias_atraso"] >= 15:
+        score += 5
+    elif row["dias_atraso"] >= 7:
+        score += 3
+    elif row["dias_atraso"] >= 1:
+        score += 1
+
+    if row["criticidade"] == "Alta":
+        score += 5
+    elif row["criticidade"] == "Média":
+        score += 3
+    else:
+        score += 1
+
+    if row["valor"] >= 50000:
+        score += 4
+    elif row["valor"] >= 20000:
+        score += 2
+    else:
+        score += 1
+
+    return score
+
+
+def classificar_prioridade(score: int) -> str:
+    if score >= 11:
+        return "Alta"
+    elif score >= 7:
+        return "Média"
+    return "Baixa"
+
+
+def classificar_faixa_atraso(dias: int) -> str:
+    if dias <= 0:
+        return "No prazo"
+    if dias <= 5:
+        return "1 a 5 dias"
+    if dias <= 10:
+        return "6 a 10 dias"
+    if dias <= 15:
+        return "11 a 15 dias"
+    return "Acima de 15 dias"
+
+
+def tratar_followups(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+
+    df["score_urgencia"] = df.apply(calcular_score_urgencia, axis=1)
+    df["prioridade"] = df["score_urgencia"].apply(classificar_prioridade)
+    df["faixa_atraso"] = df["dias_atraso"].apply(classificar_faixa_atraso)
+
+    ordem_prioridade = {"Alta": 1, "Média": 2, "Baixa": 3}
+    df["ordem_prioridade"] = df["prioridade"].map(ordem_prioridade)
+
+    df = df.sort_values(
+        by=["ordem_prioridade", "dias_atraso", "valor"],
+        ascending=[True, False, False]
+    ).reset_index(drop=True)
+
+    return df
