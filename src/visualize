@@ -1,0 +1,143 @@
+import os
+import matplotlib.pyplot as plt
+import pandas as pd
+
+
+def gerar_dashboard_png(df: pd.DataFrame, output_dir: str) -> str:
+    os.makedirs(output_dir, exist_ok=True)
+
+    total_pendencias = len(df)
+    prioridade_alta = (df["prioridade"] == "Alta").sum()
+    atrasados = (df["dias_atraso"] > 0).sum()
+    valor_total = df["valor"].sum()
+
+    top_compradores = (
+        df.groupby("comprador", as_index=False)
+        .size()
+        .rename(columns={"size": "quantidade"})
+        .sort_values("quantidade", ascending=False)
+        .head(5)
+    )
+
+    top_fornecedores = (
+        df.groupby("fornecedor", as_index=False)
+        .size()
+        .rename(columns={"size": "quantidade"})
+        .sort_values("quantidade", ascending=False)
+        .head(5)
+    )
+
+    aging = (
+        df.groupby("faixa_atraso", as_index=False)
+        .size()
+        .rename(columns={"size": "quantidade"})
+    )
+
+    ordem_aging = ["No prazo", "1 a 5 dias", "6 a 10 dias", "11 a 15 dias", "Acima de 15 dias"]
+    aging["faixa_atraso"] = pd.Categorical(aging["faixa_atraso"], categories=ordem_aging, ordered=True)
+    aging = aging.sort_values("faixa_atraso")
+
+    fig = plt.figure(figsize=(16, 10), facecolor="#F8FAFC")
+    gs = fig.add_gridspec(5, 12, height_ratios=[0.8, 1.1, 2.8, 2.8, 0.3], hspace=1.0, wspace=1.2)
+
+    cores = {
+        "texto": "#1F2937",
+        "subtexto": "#6B7280",
+        "borda": "#E5E7EB",
+        "alta": "#D32F2F",
+        "media": "#F9A825",
+        "azul": "#1565C0",
+        "verde": "#2E7D32",
+        "fundo": "#FFFFFF",
+    }
+
+    ax_title = fig.add_subplot(gs[0, :])
+    ax_title.axis("off")
+    ax_title.text(0.0, 0.72, "Smart Follow-Up Manager", fontsize=24, fontweight="bold", color=cores["texto"])
+    ax_title.text(0.0, 0.18, "Dashboard executivo de pendências, atrasos e prioridades operacionais", fontsize=11, color=cores["subtexto"])
+
+    def card(ax, titulo, valor, cor_valor):
+        ax.set_facecolor(cores["fundo"])
+        ax.set_xticks([])
+        ax.set_yticks([])
+        for spine in ax.spines.values():
+            spine.set_visible(True)
+            spine.set_color(cores["borda"])
+            spine.set_linewidth(1.0)
+        ax.text(0.05, 0.72, titulo, fontsize=10, color=cores["subtexto"], transform=ax.transAxes)
+        ax.text(0.05, 0.18, str(valor), fontsize=22, fontweight="bold", color=cor_valor, transform=ax.transAxes)
+
+    card(fig.add_subplot(gs[1, 0:3]), "Pendências Totais", total_pendencias, cores["azul"])
+    card(fig.add_subplot(gs[1, 3:6]), "Prioridade Alta", prioridade_alta, cores["alta"])
+    card(fig.add_subplot(gs[1, 6:9]), "Pedidos Atrasados", atrasados, cores["media"])
+    card(fig.add_subplot(gs[1, 9:12]), "Valor Total", f"R$ {valor_total:,.0f}".replace(",", "."), cores["verde"])
+
+    ax_aging = fig.add_subplot(gs[2, 0:6])
+    ax_aging.set_facecolor(cores["fundo"])
+    for spine in ax_aging.spines.values():
+        spine.set_visible(True)
+        spine.set_color(cores["borda"])
+    barras_aging = ax_aging.bar(aging["faixa_atraso"].astype(str), aging["quantidade"], color="#1565C0")
+    ax_aging.set_title("Aging de Atraso", loc="left", fontsize=13, fontweight="bold", color=cores["texto"], pad=15)
+    ax_aging.grid(axis="y", alpha=0.2)
+    ax_aging.spines["top"].set_visible(False)
+    ax_aging.spines["right"].set_visible(False)
+    ax_aging.tick_params(axis="x", rotation=25)
+    ax_aging.bar_label(barras_aging, padding=3, fontsize=9)
+
+    ax_comp = fig.add_subplot(gs[2, 6:12])
+    ax_comp.set_facecolor(cores["fundo"])
+    for spine in ax_comp.spines.values():
+        spine.set_visible(True)
+        spine.set_color(cores["borda"])
+    bars = ax_comp.barh(top_compradores["comprador"], top_compradores["quantidade"], color="#F9A825")
+    ax_comp.invert_yaxis()
+    ax_comp.set_title("Top Compradores com Pendências", loc="left", fontsize=13, fontweight="bold", color=cores["texto"], pad=15)
+    ax_comp.grid(axis="x", alpha=0.2)
+    ax_comp.spines["top"].set_visible(False)
+    ax_comp.spines["right"].set_visible(False)
+    ax_comp.bar_label(bars, padding=3, fontsize=9)
+
+    ax_table = fig.add_subplot(gs[3, :])
+    ax_table.set_facecolor(cores["fundo"])
+    ax_table.axis("off")
+    ax_table.text(0.0, 1.08, "Fornecedores e Pedidos Prioritários", fontsize=14, fontweight="bold", color=cores["texto"], transform=ax_table.transAxes)
+
+    resumo = df.head(6)[["pedido", "fornecedor", "comprador", "dias_atraso", "prioridade"]].copy()
+
+    tabela = ax_table.table(
+        cellText=resumo.values,
+        colLabels=["Pedido", "Fornecedor", "Comprador", "Dias em atraso", "Prioridade"],
+        cellLoc="center",
+        loc="center",
+        bbox=[0, 0.02, 1, 0.88]
+    )
+    tabela.auto_set_font_size(False)
+    tabela.set_fontsize(9.5)
+    tabela.scale(1, 1.55)
+
+    for (row, col), cell in tabela.get_celld().items():
+        cell.set_edgecolor(cores["borda"])
+        if row == 0:
+            cell.set_facecolor("#0F172A")
+            cell.set_text_props(color="white", weight="bold")
+        else:
+            cell.set_facecolor("white")
+            if col == 4:
+                prioridade = resumo.iloc[row - 1, 4]
+                if prioridade == "Alta":
+                    cell.set_text_props(color=cores["alta"], weight="bold")
+                elif prioridade == "Média":
+                    cell.set_text_props(color=cores["media"], weight="bold")
+                else:
+                    cell.set_text_props(color=cores["verde"], weight="bold")
+
+    ax_footer = fig.add_subplot(gs[4, :])
+    ax_footer.axis("off")
+    ax_footer.text(0.0, 0.5, "Projeto analítico de portfólio | Follow-up | Compras | Python + Dados", fontsize=9, color=cores["subtexto"])
+
+    caminho = os.path.join(output_dir, "dashboard_followup.png")
+    plt.savefig(caminho, dpi=300, bbox_inches="tight", facecolor=fig.get_facecolor())
+    plt.close()
+
+    return caminho
