@@ -1,7 +1,5 @@
 # Smart Follow-Up Manager
 
-![Dashboard Executivo](assets/dashboard.png)
-
 Aplicação analítica desenvolvida em **Python + Streamlit** para gestão de pendências, atrasos e priorização operacional em processos de follow-up de compras e suprimentos.
 
 ---
@@ -37,5 +35,9 @@ na identificação rápida de pendências prioritárias, reduzindo atrasos e mel
 
 ## Dashboard Online
 
+Adicione aqui seu link após publicar no Streamlit Cloud.
+
+Exemplo:
+
 ```md
-(Adicione aqui seu link após publicar no Streamlit Cloud)
+[👉 Acessar Aplicação](https://smart-followup-manager.streamlit.app)
